@@ -13,58 +13,54 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the code
+      # Checkout the repository
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
-      # Set up Node.js for backend
+      # Set up Node.js for backend (API)
       - name: Set up Node.js (backend)
         uses: actions/setup-node@v3
         with:
-          node-version: '16'  # Change the version based on your project needs
+          node-version: '16'  # Adjust the version as needed
 
-      # Install backend dependencies
+      # Install backend (API) dependencies
       - name: Install backend dependencies
-        working-directory: ./api
-        run: npm install
+        run: |
+          cd api
+          npm install
 
       # Run backend tests
       - name: Run backend tests
-        working-directory: ./api
-        run: npm test
-          
-          
+        run: |
+          cd api
+          npm test
 
-      # Build the backend application (if applicable, e.g., compiling TypeScript)
+      # Build the backend application
       - name: Build backend application
-        working-directory: ./api
-        run:  npm run build  # Adjust the command if necessary for your build setup
+        run: |
+          cd api
+          npm run build  # Adjust if necessary for your backend build process
 
-          
-         
-      # Set up Node.js for frontend
+      # Set up Node.js for frontend (Webapp)
       - name: Set up Node.js (frontend)
         uses: actions/setup-node@v3
         with:
-          node-version: '16'  # Same as backend, or different if necessary
+          node-version: '16'  # Same as backend or adjust as needed
 
-      # Install frontend dependencies
+      # Install frontend (Webapp) dependencies
       - name: Install frontend dependencies
-        working-directory: ./webapp
-        run: npm install
-          
-         
+        run: |
+          cd webapp
+          npm install
 
       # Run frontend tests
       - name: Run frontend tests
-        working-directory: ./webapp
-        run: npm run test  # This could be "npx cypress run" if using Cypress
-          
-          
+        run: |
+          cd webapp
+          npm run test  # Adjust this if you're using something like Cypress or Jest
 
-      # Build the frontend application (e.g., for React, Vue, etc.)
+      # Build the frontend application
       - name: Build frontend application
-        working-directory: ./webapp
-        run: npm run build  # Adjust this if you have a different build script (e.g., `react-scripts build`)
-          
-          
+        run: |
+          cd webapp
+          npm run build  # Adjust if necessary for your frontend build process (React, Vue, etc.)
