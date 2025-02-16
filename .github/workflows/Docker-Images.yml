@@ -22,3 +22,39 @@ jobs:
       - uses: actions/checkout@v2
       - name: Build Docker Image
         run: docker build -t webapp-image ./webapp
+        
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to AWS EC2
+    needs: build-and-push
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: SSH into EC2 instance and deploy
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          script: |
+            # Stop existing containers
+            docker stop frontend backend || true
+            docker rm frontend backend || true
+
+            # Pull the latest Docker images
+            docker pull ${{ secrets.DOCKER_USERNAME }}/frontend:${{ github.sha }}
+            docker pull ${{ secrets.DOCKER_USERNAME }}/backend:${{ github.sha }}
+
+            # Run the frontend and backend containers
+            docker run -d --name frontend -p 80:80 ${{ secrets.DOCKER_USERNAME }}/frontend:${{ github.sha }}
+            docker run -d --name backend -p 3000:3000 ${{ secrets.DOCKER_USERNAME }}/backend:${{ github.sha }}
+
+            echo "Deployment successful!"
