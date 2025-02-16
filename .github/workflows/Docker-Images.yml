@@ -31,6 +31,22 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v2
 
+      - name: Cache Docker layers for frontend
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/docker
+          key: ${{ runner.os }}-docker-frontend-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-docker-frontend-
+
+      - name: Cache Docker layers for backend
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/docker
+          key: ${{ runner.os }}-docker-backend-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-docker-backend-
+            
       - name: Set up AWS CLI
         uses: aws-actions/configure-aws-credentials@v1
         with:
