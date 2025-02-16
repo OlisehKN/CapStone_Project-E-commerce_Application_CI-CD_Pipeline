@@ -26,7 +26,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Deploy to AWS EC2
-    needs: build-and-push
+    needs: build-api
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2
