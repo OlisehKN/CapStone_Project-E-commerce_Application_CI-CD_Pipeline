@@ -25,22 +25,23 @@ jobs:
 
       # Install backend dependencies
       - name: Install backend dependencies
-        run: |
-          cd api
-          npm install
+        working-directory: ./api
+        run: npm install
 
       # Run backend tests
       - name: Run backend tests
-        run: |
-          cd api
-          npm test
+        working-directory: ./api
+        run: npm test
+          
+          
 
       # Build the backend application (if applicable, e.g., compiling TypeScript)
       - name: Build backend application
-        run: |
-          cd api
-          npm run build  # Adjust the command if necessary for your build setup
+        working-directory: ./api
+        run:  npm run build  # Adjust the command if necessary for your build setup
 
+          
+         
       # Set up Node.js for frontend
       - name: Set up Node.js (frontend)
         uses: actions/setup-node@v3
@@ -49,18 +50,21 @@ jobs:
 
       # Install frontend dependencies
       - name: Install frontend dependencies
-        run: |
-          cd webapp
-          npm install
+        working-directory: ./webapp
+        run: npm install
+          
+         
 
       # Run frontend tests
       - name: Run frontend tests
-        run: |
-          cd webapp
-          npm run test  # This could be "npx cypress run" if using Cypress
+        working-directory: ./webapp
+        run: npm run test  # This could be "npx cypress run" if using Cypress
+          
+          
 
       # Build the frontend application (e.g., for React, Vue, etc.)
       - name: Build frontend application
-        run: |
-          cd webapp
-          npm run build  # Adjust this if you have a different build script (e.g., `react-scripts build`)
+        working-directory: ./webapp
+        run: npm run build  # Adjust this if you have a different build script (e.g., `react-scripts build`)
+          
+          
