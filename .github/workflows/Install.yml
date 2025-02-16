@@ -9,8 +9,8 @@ pull_request:
   branches:
     - main
 
-jobs: [install]
-install:
+jobs:
+  install:
   runs-on: ubuntu-latest
   steps:
     - name: Checkout code
