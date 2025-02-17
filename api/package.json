@@ -8,11 +8,21 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "express": "^4.21.2",
-    "jest": "^29.7.0",
     "nodemon": "^3.1.9",
     "supertest": "^7.0.0"
-  }
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OlisehKN/CapStone_Project-E-commerce_Application_CI-CD_Pipeline.git"
+  },
+  "bugs": {
+    "url": "https://github.com/OlisehKN/CapStone_Project-E-commerce_Application_CI-CD_Pipeline/issues"
+  },
+  "homepage": "https://github.com/OlisehKN/CapStone_Project-E-commerce_Application_CI-CD_Pipeline#readme",
+  "description": ""
 }
