@@ -27,3 +27,13 @@
 ### <ins>Task 3: Backend API Setup</ins>
 
   - In the **api** directory, set up a simple Node.js/Express application that handles basic e-commerce operations.
+
+      - First, we change into change into the "api" directory and initialize the directory with the following commands on the terminal.
+
+            cd api
+            npm init -y
+
+![Screenshot (331)](https://github.com/user-attachments/assets/4896eb72-5e94-4fda-8578-d978c769de1a)
+
+  - Secondly, 
+
