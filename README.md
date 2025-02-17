@@ -238,7 +238,271 @@
 
 ### <ins>Task 6: Docker Integration</ins>
 
-  
+  - Create Dockerfiles for both the frontend and backend.
 
+      - <ins>Frontend</ins>
+
+            # Step 1: Set up the base image with Node.js
+            FROM node:14 AS build
+            
+            # Step 2: Set the working directory inside the container
+            WORKDIR /app
+            
+            # Step 3: Copy the package.json and package-lock.json (or yarn.lock) to install dependencies first
+            COPY package.json package-lock.json ./
+            
+            # Step 4: Install dependencies
+            RUN npm install
+            
+            # Step 5: Copy the rest of the application code
+            COPY . .
+            
+            # Step 6: Build the React app
+            RUN npm run build
+            
+            # Step 7: Set up the final image for serving the build
+            FROM nginx:alpine
+            
+            # Step 8: Copy the build output from the previous step to NGINX's default public directory
+            COPY --from=build /app/build /usr/share/nginx/html
+            
+            # Step 9: Expose port 80
+            EXPOSE 80
+            
+            # Step 10: Start the NGINX server
+            CMD ["nginx", "-g", "daemon off;"]
+
+![Screenshot (343)](https://github.com/user-attachments/assets/be830f92-c44c-4b41-bb95-2e964ff21a87)
+
+  - <ins>Backend</ins>
+
+          # Step 1: Use official Node.js image as base
+          FROM node:14
+          
+          # Step 2: Set the working directory inside the container
+          WORKDIR /usr/src/app
+          
+          # Step 3: Copy the package.json and package-lock.json (or yarn.lock) to install dependencies first
+          COPY package.json package-lock.json ./
+          
+          # Step 4: Install dependencies
+          RUN npm install
+          
+          # Step 5: Copy the rest of the application code into the container
+          COPY . .
+          
+          # Step 6: Expose the port that the application will run on
+          EXPOSE 3000
+          
+          # Step 7: Run the application
+          CMD ["npm", "start"]
+
+![Screenshot (342)](https://github.com/user-attachments/assets/e42b343c-59d0-47a3-b60e-7e2d9fb5c239)
+
+  - Modify my GitHub Actions workflows to build Docker images
+
+            name: Build Docker Images for Frontend and Backend
+        
+        on:
+          push:
+            branches:
+              - main
+          pull_request:
+            branches:
+              - main
+        
+        jobs:
+          build-api:
+            runs-on: ubuntu-latest
+            steps:
+              - uses: actions/checkout@v2
+              - name: Build Docker Image
+                run: docker build -t api-image ./api
+        
+          build-webapp:
+            runs-on: ubuntu-latest
+            steps:
+              - uses: actions/checkout@v2
+              - name: Build Docker Image
+                run: docker build -t webapp-image ./webapp
+                
+          
+![Screenshot (344)](https://github.com/user-attachments/assets/45b1c13e-0099-4217-829a-56d046ece045)
+
+### <ins>Task 7: Deploy to Cloud</ins>
+
+  - Choose a cloud platform for deployment (AWS, Azure or GCP)
+       Answer: The preferred cloud platform chosen was Amazon's AWS Platform
+
+  - Configure GitHub Actions to deploy the Docker images to the chosen cloud platform.
+
+        deploy:
+                    runs-on: ubuntu-latest
+                    name: Deploy to AWS EC2
+                    needs: build-api
+                    steps:
+                      - name: Checkout Code
+                        uses: actions/checkout@v2
+                
+                      - name: Cache Docker layers for frontend
+                        uses: actions/cache@v3
+                        with:
+                          path: ~/.cache/docker
+                          key: ${{ runner.os }}-docker-frontend-${{ github.sha }}
+                          restore-keys: |
+                            ${{ runner.os }}-docker-frontend-
+                
+                      - name: Cache Docker layers for backend
+                        uses: actions/cache@v3
+                        with:
+                          path: ~/.cache/docker
+                          key: ${{ runner.os }}-docker-backend-${{ github.sha }}
+                          restore-keys: |
+                            ${{ runner.os }}-docker-backend-
+                            
+                      - name: Set up AWS CLI
+                        uses: aws-actions/configure-aws-credentials@v1
+                        with:
+                          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                          aws-region: ${{ secrets.AWS_REGION }}
+                
+                      - name: SSH into EC2 instance and deploy
+                        uses: appleboy/ssh-action@v0.1.5
+                        with:
+                          host: ${{ secrets.EC2_PUBLIC_IP }}
+                          username: ${{ secrets.EC2_USERNAME }}
+                          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+                          script: |
+                            # Stop existing containers
+                            docker stop frontend backend || true
+                            docker rm frontend backend || true
+                
+                            # Pull the latest Docker images
+                            docker pull ${{ secrets.DOCKER_USERNAME }}/frontend:${{ github.sha }}
+                            docker pull ${{ secrets.DOCKER_USERNAME }}/backend:${{ github.sha }}
+                
+                            # Run the frontend and backend containers
+                            docker run -d --name frontend -p 80:80 ${{ secrets.DOCKER_USERNAME }}/frontend:${{ github.sha }}
+                            docker run -d --name backend -p 3000:3000 ${{ secrets.DOCKER_USERNAME }}/backend:${{ github.sha }}
+                
+                            echo "Deployment successful!"
+
+![Screenshot (345)](https://github.com/user-attachments/assets/82ef0969-491d-49eb-bd32-c9bcbcd74de9)
+![Screenshot (346)](https://github.com/user-attachments/assets/b2c21d1c-617a-4bac-a22b-3d4ee154d8c8)
+
+  - Use GitHub Secrets to securely store and access cloud credentials
+      Answer: Within the code, To access the Instance's Host name, Username and key, they will be stored in the secrets file of the application.
+
+### <ins>Task 8: Continuous Deployment</ins>
+
+  - Configure my workflows to deploy updates automatically to the cloud environmentwhen changes are pushed to the main branch.
+
+            name: Auto Deploy to AWS EC2 on Push to Main
+            
+            on:
+              push:
+                branches:
+                  - main
+            
+            jobs:
+              build-and-push:
+                runs-on: ubuntu-latest
+                name: Build Docker Images and Push to Docker Hub
+                steps:
+                  - name: Checkout Code
+                    uses: actions/checkout@v2
+            
+                  - name: Set up Docker Buildx
+                    uses: docker/setup-buildx-action@v2
+            
+                  - name: Build Docker image for frontend
+                    run: |
+                      docker build -f frontend/Dockerfile -t ${{ secrets.DOCKER_USERNAME }}/frontend:${{ github.sha }} .
+                  
+                  - name: Build Docker image for backend
+                    run: |
+                      docker build -f backend/Dockerfile -t ${{ secrets.DOCKER_USERNAME }}/backend:${{ github.sha }} .
+            
+                  - name: Log in to Docker Hub
+                    uses: docker/login-action@v2
+                    with:
+                      username: ${{ secrets.DOCKER_USERNAME }}
+                      password: ${{ secrets.DOCKER_PASSWORD }}
+            
+                  - name: Push Docker image for frontend
+                    run: |
+                      docker push ${{ secrets.DOCKER_USERNAME }}/frontend:${{ github.sha }}
+                  
+                  - name: Push Docker image for backend
+                    run: |
+                      docker push ${{ secrets.DOCKER_USERNAME }}/backend:${{ github.sha }}
+            
+              deploy:
+                runs-on: ubuntu-latest
+                name: Deploy to AWS EC2
+                needs: build-and-push
+                steps:
+                  - name: Set up AWS CLI
+                    uses: aws-actions/configure-aws-credentials@v1
+                    with:
+                      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                      aws-region: ${{ secrets.AWS_REGION }}
+            
+                  - name: SSH into EC2 instance and deploy
+                    uses: appleboy/ssh-action@v0.1.5
+                    with:
+                      host: ${{ secrets.EC2_PUBLIC_IP }}
+                      username: ${{ secrets.EC2_USERNAME }}
+                      key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+                      script: |
+                        # Stop existing containers
+                        docker stop frontend backend || true
+                        docker rm frontend backend || true
+            
+                        # Pull the latest Docker images from Docker Hub
+                        docker pull ${{ secrets.DOCKER_USERNAME }}/frontend:${{ github.sha }}
+                        docker pull ${{ secrets.DOCKER_USERNAME }}/backend:${{ github.sha }}
+            
+                        # Run the frontend container (make sure to expose the correct ports)
+                        docker run -d --name frontend -p 80:80 ${{ secrets.DOCKER_USERNAME }}/frontend:${{ github.sha }}
+            
+                        # Run the backend container (make sure to expose the correct ports)
+                        docker run -d --name backend -p 3000:3000 ${{ secrets.DOCKER_USERNAME }}/backend:${{ github.sha }}
+            
+                        echo "Deployment successful!"
+
+![Screenshot (347)](https://github.com/user-attachments/assets/7e78766b-07fc-4cdb-9661-e8a8123e6ec5)
+![Screenshot (348)](https://github.com/user-attachments/assets/d0e6c171-9cb0-4141-aaf7-2bd6de6aa5a4)
+![Screenshot (349)](https://github.com/user-attachments/assets/daa693a4-fe04-4fb8-b2d6-2f5e3aad959e)
+
+### <ins>Task 9: Performance and Security</ins>
+
+  - Implement caching in your workflows to optimize build times.
+
+                      - name: Cache Docker layers for frontend
+                                        uses: actions/cache@v3
+                                        with:
+                                          path: ~/.cache/docker
+                                          key: ${{ runner.os }}-docker-frontend-${{ github.sha }}
+                                          restore-keys: |
+                                            ${{ runner.os }}-docker-frontend-
+                
+                      - name: Cache Docker layers for backend
+                        uses: actions/cache@v3
+                        with:
+                          path: ~/.cache/docker
+                          key: ${{ runner.os }}-docker-backend-${{ github.sha }}
+                          restore-keys: |
+                            ${{ runner.os }}-docker-backend-
+
+![Screenshot (350)](https://github.com/user-attachments/assets/f1cd740d-b2c3-47fd-a1ee-3d3fd2376a48)
+
+### <ins>Task 10: Project Documentation</ins>
+
+  - Document my project setup, workflow details and instructions for local development in a **README.md** file.
+
+**END**
 
 
